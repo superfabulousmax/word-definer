@@ -35,9 +35,9 @@ def detect_lines(image_path):
     underlines = []
     if lines is not None:
         for line in lines:
-            x1, y1, x2, y2 = line[0]
+            _, y1, _, y2 = line[0]
             if abs(y1 - y2) < 5:  # near-horizontal
-                underlines.append((x1, y1, x2, y2))
+                underlines.append(line[0])
     return underlines
 
 def match_words_to_underlines(words, lines, vertical_gap=30):
