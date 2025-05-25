@@ -1,6 +1,7 @@
 import pytesseract
 from PIL import Image
 import cv2
+import re
 import numpy as np
 
 def extract_words_with_boxes(image_path):
@@ -23,6 +24,7 @@ def extract_words_with_boxes(image_path):
             words.append(word_info)
     return words
 
+
 def detect_lines(image_path):
     img = cv2.imread(image_path)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -35,14 +37,14 @@ def detect_lines(image_path):
     underlines = []
     if lines is not None:
         for line in lines:
-            _, y1, _, y2 = line[0]
+            x1, y1, x2, y2 = line[0]
             if abs(y1 - y2) < 5:  # near-horizontal
-                underlines.append(line[0])
+                underlines.append((x1, y1, x2, y2))
     return underlines
 
 def match_words_to_underlines(words, lines, vertical_gap=30):
     matched = []
-    for word in words:
+    for i, word in enumerate(words):
         word_left = word['x']
         word_right = word['x'] + word['w']
         word_bottom = word['y'] + word['h']
@@ -54,6 +56,27 @@ def match_words_to_underlines(words, lines, vertical_gap=30):
                 line_left = min(x1, x2)
                 line_right = max(x1, x2)
                 if word_right > line_left and word_left < line_right:
-                    matched.append(word['text'])
+                    sentence = get_sentence_for_word(words, i)
+                    matched.append((word['text'], sentence))
                     break
     return matched
+
+def get_sentence_for_word(words, position):
+    # Go backward to find the start of the sentence
+    start = position
+    while start > 0:
+        if words[start - 1]['text'].endswith('.'):
+            break
+        start -= 1
+
+    # Go forward to find the end of the sentence
+    end = position
+    while end < len(words) - 1:
+        if words[end]['text'].endswith('.'):
+            break
+        end += 1
+
+    # Collect the sentence words
+    sentence_words = [ word['text'] for word in words[start:end + 1] ]
+    sentence = ' '.join(sentence_words)
+    return sentence
