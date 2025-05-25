@@ -2,7 +2,7 @@ from flask import Flask, request
 import base64
 from io import BytesIO
 from PIL import Image
-from text_extractor import extract_words_with_boxes_from_image, detect_lines_from_image, match_words_to_underlines, match_words_to_given_lines
+from text_extractor import extract_words_with_boxes_from_image, detect_lines_from_image, match_lines_to_words
 from dictionary import get_definition
 
 class ImageProcessor:
@@ -20,10 +20,10 @@ class ImageProcessor:
             image = Image.open(BytesIO(img_bytes)).convert("RGB").copy()
             words = extract_words_with_boxes_from_image(image)
             if lines_data:
-                matched = match_words_to_given_lines(words, lines_data)
+                matched = match_lines_to_words(words, lines_data)
             else:
                 lines = detect_lines_from_image(image)
-                matched = match_words_to_underlines(words, lines)
+                matched = match_lines_to_words(words, lines)
             result = []
             for word, sentence in matched:   
                 result.append({
