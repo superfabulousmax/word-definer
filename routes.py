@@ -31,6 +31,5 @@ class ImageProcessor:
                     "Sentence": sentence,
                     "Definition": get_definition(word, sentence)
                 })
-            print(result)
             return {"results": result}
 
