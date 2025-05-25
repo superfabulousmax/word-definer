@@ -3,8 +3,8 @@ from PIL import Image
 import cv2 
 import numpy as np
 
-def extract_words_with_boxes(image_path: str) -> list[dict]:
-    image = Image.open(image_path)
+
+def extract_words_with_boxes_from_image(image: Image) -> list[dict]:
     data = pytesseract.image_to_data(image, output_type=pytesseract.Output.DICT)
     
     words = []
@@ -23,10 +23,14 @@ def extract_words_with_boxes(image_path: str) -> list[dict]:
             words.append(word_info)
     return words
 
-
-def detect_lines(image_path: str) -> list[tuple[int, int, int, int]]:
-    img = cv2.imread(image_path)
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+def detect_lines_from_image(image: Image) -> list[tuple[int, int, int, int]]:
+    # Convert PIL Image to NumPy array if needed
+    if not isinstance(image, np.ndarray):
+        image = np.array(image)
+        # If the image is RGBA, convert to RGB first
+        if image.shape[2] == 4:
+            image = cv2.cvtColor(image, cv2.COLOR_RGBA2RGB)
+    gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
     edges = cv2.Canny(gray, 50, 150, apertureSize=3)
 
     # Detect lines using Hough Transform
@@ -79,3 +83,28 @@ def get_sentence_for_word(words: list[dict], position: int) -> str:
     sentence_words = [ word['text'] for word in words[start:end + 1] ]
     sentence = ' '.join(sentence_words)
     return sentence
+
+def match_words_to_given_lines(words: list[dict], lines: list[dict], max_vertical_distance: int = 50) -> list[tuple[str, str]]:
+    """
+    Match words to user-provided line coordinates (from the frontend).
+    Each line should be a dict with keys: x1, y1, x2, y2.
+    The line can be just under the word or a bit further below (up to max_vertical_distance).
+    """
+    matched = []
+    for i, word in enumerate(words):
+        word_left = word['x']
+        word_right = word['x'] + word['w']
+        word_bottom = word['y'] + word['h']
+
+        for line in lines:
+            x1, y1, x2 = line['x1'], line['y1'], line['x2']
+            # Allow the line to be just under or a bit further below the word
+            vertical_offset = y1 - word_bottom
+            if -5 < vertical_offset < max_vertical_distance:
+                line_left = min(x1, x2)
+                line_right = max(x1, x2)
+                if word_right > line_left and word_left < line_right:
+                    sentence = get_sentence_for_word(words, i)
+                    matched.append((word['text'], sentence))
+                    break
+    return matched

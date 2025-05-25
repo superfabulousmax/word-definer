@@ -1,0 +1,87 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 2em;
+}
+
+.container {
+  max-width: 700px;
+  margin: auto;
+}
+
+#canvasWrapper {
+  position: relative;
+  display: inline-block;
+  max-width: 500px;
+  width: 100%;
+}
+
+#imageCanvas, #drawCanvas {
+  position: absolute;
+  left: 0;
+  top: 0;
+  cursor: crosshair;
+  width: 100%;
+  height: auto;
+  max-width: 500px;
+  /* Remove max-height to avoid vertical stretching */
+  /* Responsive scaling */
+  display: block;
+}
+
+#imageCanvas {
+  z-index: 1;
+}
+
+#drawCanvas {
+  z-index: 2;
+}
+
+#controls {
+  display: none;
+  margin-top: 0.5em;
+  margin-bottom: 1em;
+  flex-direction: row;
+  gap: 0.5em;
+  align-items: center;
+}
+
+#resultsModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+#resultsContent {
+  background: #fff;
+  border-radius: 8px;
+  padding: 2em 2em 1em 2em;
+  max-width: 90vw;
+  width: 700px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 32px rgba(0,0,0,0.2);
+}
+
+#resultsText {
+  font-size: 1.1em;
+  line-height: 1.5;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+#closeResults {
+  font-size: 1em;
+  background: #eee;
+  border: none;
+  border-radius: 4px;
+  padding: 0.3em 1em;
+  cursor: pointer;
+  margin-bottom: 1em;
+} 

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Word Definer - Underline Tool</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Word Definer</h1>
+    <p>Upload an image, then underline the words you want definitions for:</p>
+    <input type="file" id="imageInput" accept="image/*">
+    <div id="controls">
+      <button id="undoBtn">Undo</button>
+      <button id="clearBtn">Clear Underlines</button>
+      <button id="submitBtn">Submit</button>
+    </div>
+    <div id="canvasWrapper" style="display:none;">
+      <canvas id="imageCanvas"></canvas>
+      <canvas id="drawCanvas"></canvas>
+    </div>
+    <div id="resultsModal" style="display:none;">
+      <div id="resultsContent">
+        <button id="closeResults" style="float:right;">Close</button>
+        <h2>Definitions</h2>
+        <div id="resultsText"></div>
+      </div>
+    </div>
+  </div>
+  <script>
+    const imageInput = document.getElementById('imageInput');
+    const imageCanvas = document.getElementById('imageCanvas');
+    const drawCanvas = document.getElementById('drawCanvas');
+    const canvasWrapper = document.getElementById('canvasWrapper');
+    const clearBtn = document.getElementById('clearBtn');
+    const submitBtn = document.getElementById('submitBtn');
+    const controls = document.getElementById('controls');
+    const undoBtn = document.getElementById('undoBtn');
+    const resultsModal = document.getElementById('resultsModal');
+    const resultsContent = document.getElementById('resultsContent');
+    const resultsText = document.getElementById('resultsText');
+    const closeResults = document.getElementById('closeResults');
+
+    let img = new window.Image();
+    let lines = [];
+    let drawing = false;
+    let startX = 0, startY = 0;
+
+    imageInput.addEventListener('change', function(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          img.onload = function() {
+            // Calculate scale for max width 500px and preserve aspect ratio
+            const maxWidth = 500;
+            let scale = 1;
+            if (img.width > maxWidth) {
+              scale = maxWidth / img.width;
+            }
+            const displayWidth = img.width * scale;
+            const displayHeight = img.height * scale;
+            // Set canvas sizes to image size (for drawing), but scale display
+            imageCanvas.width = drawCanvas.width = img.width;
+            imageCanvas.height = drawCanvas.height = img.height;
+            imageCanvas.style.width = drawCanvas.style.width = displayWidth + 'px';
+            imageCanvas.style.height = drawCanvas.style.height = displayHeight + 'px';
+            // Draw image on imageCanvas
+            const ctx = imageCanvas.getContext('2d');
+            ctx.clearRect(0, 0, img.width, img.height);
+            ctx.drawImage(img, 0, 0);
+            // Show canvases and controls
+            controls.style.display = 'flex';
+            canvasWrapper.style.display = 'inline-block';
+            undoBtn.style.display = 'inline-block';
+            // Clear previous lines
+            lines = [];
+            clearDrawCanvas();
+            // Store scale for later use
+            imageCanvas.dataset.scale = scale;
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      } else {
+        controls.style.display = 'none';
+        canvasWrapper.style.display = 'none';
+      }
+    });
+
+    function getCanvasCoords(e) {
+      const scale = parseFloat(imageCanvas.dataset.scale || '1');
+      // Use offsetX/Y for mouse position relative to the canvas
+      const x = e.offsetX / scale;
+      const y = e.offsetY / scale;
+      return { x, y };
+    }
+
+    function clearDrawCanvas() {
+      const ctx = drawCanvas.getContext('2d');
+      ctx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+      // Redraw all lines
+      ctx.strokeStyle = 'red';
+      ctx.lineWidth = 3;
+      for (const line of lines) {
+        ctx.beginPath();
+        ctx.moveTo(line.x1, line.y1);
+        ctx.lineTo(line.x2, line.y2);
+        ctx.stroke();
+      }
+    }
+
+    // Drawing logic
+    drawCanvas.addEventListener('mousedown', function(e) {
+      drawing = true;
+      const coords = getCanvasCoords(e);
+      startX = coords.x;
+      startY = coords.y;
+    });
+
+    drawCanvas.addEventListener('mousemove', function(e) {
+      if (!drawing) return;
+      clearDrawCanvas();
+      const coords = getCanvasCoords(e);
+      const endX = coords.x;
+      const endY = coords.y;
+      // Draw current line
+      const ctx = drawCanvas.getContext('2d');
+      ctx.strokeStyle = 'blue';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      ctx.lineTo(endX, endY);
+      ctx.stroke();
+      // Redraw previous lines
+      ctx.strokeStyle = 'red';
+      for (const line of lines) {
+        ctx.beginPath();
+        ctx.moveTo(line.x1, line.y1);
+        ctx.lineTo(line.x2, line.y2);
+        ctx.stroke();
+      }
+    });
+
+    drawCanvas.addEventListener('mouseup', function(e) {
+      if (!drawing) return;
+      drawing = false;
+      const coords = getCanvasCoords(e);
+      const endX = coords.x;
+      const endY = coords.y;
+      lines.push({ x1: startX, y1: startY, x2: endX, y2: endY });
+      clearDrawCanvas();
+    });
+
+    clearBtn.addEventListener('click', function() {
+      lines = [];
+      clearDrawCanvas();
+    });
+
+    closeResults.addEventListener('click', function() {
+      resultsModal.style.display = 'none';
+    });
+
+    submitBtn.addEventListener('click', function() {
+      // Get the image as a data URL (base64)
+      const imageData = imageCanvas.toDataURL('image/png');
+
+      // Prepare the payload
+      const payload = {
+        image: imageData, // base64 string
+        lines: lines      // array of {x1, y1, x2, y2}
+      };
+
+      // Debug log
+      console.log('Submitting to backend with payload:', payload);
+
+      // Send to backend
+      fetch('http://localhost:5000/process-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      })
+      .then(response => response.json())
+      .then(data => {
+        // Show results in a modal
+        let html = '';
+        if (data.results && data.results.length > 0) {
+          data.results.forEach((item, idx) => {
+            html += `<div style='margin-bottom:1em;'><b>Word:</b> ${item.Word}<br><b>Sentence:</b> ${item.Sentence}<br><b>Definition:</b> ${item.Definition}</div>`;
+          });
+        } else {
+          html = '<i>No definitions found.</i>';
+        }
+        resultsText.innerHTML = html;
+        resultsModal.style.display = 'block';
+      })
+      .catch(error => {
+        console.error('Error submitting to backend:', error);
+        alert('Error: ' + error);
+      });
+    });
+
+    undoBtn.addEventListener('click', function() {
+      if (lines.length > 0) {
+        lines.pop(); // Remove the last line
+        clearDrawCanvas();
+      }
+    });
+  </script>
+</body>
+</html>
