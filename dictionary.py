@@ -1,13 +1,13 @@
 import os
 import requests
 
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 
-load_dotenv()
+# load_dotenv()
 
 api_key = os.getenv("NEXOS_API_KEY")
 
-def get_models():
+def get_models() -> list[dict]:
     url = "https://api.nexos.ai/v1/models"
     headers = {
         "Authorization": f"Bearer {api_key}",
@@ -16,7 +16,7 @@ def get_models():
     response = requests.get(url, headers=headers)
     return response.json()
 
-def get_definition(word: str, sentence: str):
+def get_definition(word: str, sentence: str) -> str:
     url = "https://api.nexos.ai/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {api_key}",
