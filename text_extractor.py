@@ -1,10 +1,9 @@
 import pytesseract
 from PIL import Image
-import cv2
-import re
+import cv2 
 import numpy as np
 
-def extract_words_with_boxes(image_path):
+def extract_words_with_boxes(image_path: str) -> list[dict]:
     image = Image.open(image_path)
     data = pytesseract.image_to_data(image, output_type=pytesseract.Output.DICT)
     
@@ -25,7 +24,7 @@ def extract_words_with_boxes(image_path):
     return words
 
 
-def detect_lines(image_path):
+def detect_lines(image_path: str) -> list[tuple[int, int, int, int]]:
     img = cv2.imread(image_path)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     edges = cv2.Canny(gray, 50, 150, apertureSize=3)
@@ -37,12 +36,12 @@ def detect_lines(image_path):
     underlines = []
     if lines is not None:
         for line in lines:
-            x1, y1, x2, y2 = line[0]
+            _, y1, _, y2 = line[0]
             if abs(y1 - y2) < 5:  # near-horizontal
-                underlines.append((x1, y1, x2, y2))
+                underlines.append(line[0])
     return underlines
 
-def match_words_to_underlines(words, lines, vertical_gap=30):
+def match_words_to_underlines(words: list[dict], lines: list[tuple[int, int, int, int]], vertical_gap: int = 30) -> list[tuple[str, str]]:
     matched = []
     for i, word in enumerate(words):
         word_left = word['x']
@@ -61,7 +60,7 @@ def match_words_to_underlines(words, lines, vertical_gap=30):
                     break
     return matched
 
-def get_sentence_for_word(words, position):
+def get_sentence_for_word(words: list[dict], position: int) -> str:
     # Go backward to find the start of the sentence
     start = position
     while start > 0:
