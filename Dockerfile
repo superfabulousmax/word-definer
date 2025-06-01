@@ -1,10 +1,12 @@
 FROM python:3.11-slim
 
-RUN echo "=== [Dockerfile] Starting build on Render.com ==="
+RUN echo "=== [Dockerfile] Starting build ==="
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y tesseract-ocr && rm -rf /var/lib/apt/lists/* \
-    && echo "=== [Dockerfile] Tesseract installed ==="
+RUN apt-get update && \
+    apt-get install -y tesseract-ocr libgl1-mesa-glx libglib2.0-0 libsm6 libxrender1 libxext6 && \
+    rm -rf /var/lib/apt/lists/* && \
+    echo "=== [Dockerfile] Tesseract, libGL, and OpenCV dependencies installed ==="
 
 # Set workdir
 WORKDIR /app
@@ -20,8 +22,8 @@ RUN pip install --no-cache-dir -r requirements.txt \
 COPY . .
 RUN echo "=== [Dockerfile] App code copied ==="
 
-# Expose port (Render expects 8000 or 10000, but gunicorn default is 8000)
+# Expose port
 EXPOSE 8000
 
 # Start the app with gunicorn
-CMD echo "=== [Dockerfile] Starting app with gunicorn ===" && gunicorn main:app --bind 0.0.0.0:8000 
+CMD ["gunicorn", "main:app", "--bind", "0.0.0.0:8000"] 

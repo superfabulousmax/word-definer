@@ -11,3 +11,9 @@ wheels/
 
 # Environment variables
 .env
+
+# Terraform state and backup files
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl

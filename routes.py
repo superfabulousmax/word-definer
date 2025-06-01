@@ -7,6 +7,7 @@ from dictionary import get_definition
 
 class ImageProcessor:
     def __init__(self, app: Flask):
+
         @app.route('/process-image', methods=['POST'])
         def process_image():
             print("Processing image")
