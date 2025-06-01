@@ -27,7 +27,7 @@ deploy:
 
 # Destroy the infrastructure!
 destroy:
-	cd infrastructure && terraform destroy -auto-approve \
+	cd infrastructure && terraform destroy \
 	  -var="project_id=$(PROJECT_ID)" \
 	  -var="bucket_name=$(BUCKET_NAME)" \
 	  -var="api_image=$(IMAGE_NAME)"
