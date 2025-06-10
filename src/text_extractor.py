@@ -66,18 +66,23 @@ def match_words_to_underlines(words: list[dict], lines: list[tuple[int, int, int
                     break
     return matched
 
+def is_sentence_end(ch: str) -> bool:
+    return ch.endswith('.') or ch.endswith('!') or ch.endswith('?')
+
 def get_sentence_for_word(words: list[dict], position: int) -> str:
     # Go backward to find the start of the sentence
     start = position
     while start > 0:
-        if words[start - 1]['text'].endswith('.'):
+        ch = words[start - 1]['text']
+        if is_sentence_end(ch):
             break
         start -= 1
 
     # Go forward to find the end of the sentence
     end = position
     while end < len(words) - 1:
-        if words[end]['text'].endswith('.'):
+        ch = words[end]['text']
+        if is_sentence_end(ch):
             break
         end += 1
 

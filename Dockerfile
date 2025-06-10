@@ -24,6 +24,6 @@ RUN echo "=== [Dockerfile] App code copied ==="
 
 # Expose port
 EXPOSE 8000
-
+ENV PYTHONPATH=/app/src
 # Start the app with gunicorn
-CMD ["gunicorn", "main:app", "--bind", "0.0.0.0:8000"] 
+CMD ["gunicorn", "src.main:app", "--bind", "0.0.0.0:8000"] 
